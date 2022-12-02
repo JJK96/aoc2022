@@ -18,6 +18,5 @@
   (with-input-from-file input
     (lambda () (apply + (take (sort (sum-invs) >) 3)))))
 
-
 (printf "Part 1: ~a\n" (part1 "input"))
 (printf "Part 2: ~a\n" (part2 "input"))
