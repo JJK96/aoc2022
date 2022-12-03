@@ -2,36 +2,31 @@
 
 (require util)
 
-(define (shape-points shape)
+(define num-options 3)
+
+(define (to-num shape)
   (match shape
-    [#\X 1]
-    [#\Y 2]
-    [#\Z 3]
-    [#\A 1]
-    [#\B 2]
-    [#\C 3]))
+    [#\A 0]
+    [#\B 1]
+    [#\C 2]
+    [#\X 0]
+    [#\Y 1]
+    [#\Z 2]))
 
-(define choose-to-lose
-  (make-hash (list 
-              '(#\A . #\C)
-              '(#\B . #\A)
-              '(#\C . #\B))))
+(define (shape-points shape)
+  (add1 shape))
 
-(define choose-to-win
-  (make-hash (list 
-              '(#\A . #\B)
-              '(#\B . #\C)
-              '(#\C . #\A))))
+(define (get-winning shape)
+  (modulo (add1 shape) num-options))
+
+(define (get-losing shape)
+  (modulo (sub1 shape) num-options))
 
 (define (round-points me opponent)
-  (set! me (shape-points me))
-  (set! opponent (shape-points opponent))
-  (match (- me opponent)
-      [0 3]
-      [-1 0]
-      [2 0]
-      [-2 6]
-      [1 6]))
+  (cond 
+      [(= opponent (get-winning me)) 0]
+      [(= opponent (get-losing me)) 6]
+      [else 3]))
 
 (define (round-points2 outcome)
   (match outcome
@@ -41,27 +36,33 @@
 
 (define (get-shape opponent outcome)
   (match outcome
-         [#\X (ref choose-to-lose opponent)]
+         [#\X (get-losing opponent)]
          [#\Y opponent]
-         [#\Z (ref choose-to-win opponent)]))
+         [#\Z (get-winning opponent)]))
+
+(define (parse-line line)
+  (values (to-num (ref line 0))
+          (to-num (ref line 2))))
+
+(define (parse-line1 line)
+  (values (to-num (ref line 0))
+          (ref line 2)))
 
 (define (part1 input)
   (with-input-from-file input
     (lambda () 
       (for/sum ([line (in-lines)])
-         (define opponent (ref line 0))
-         (define me (ref line 2))
-         (+ (shape-points me)
-            (round-points me opponent))))))
+         (let-values ([(opponent me) (parse-line line)])
+           (+ (shape-points me)
+              (round-points me opponent)))))))
 
 (define (part2 input)
   (with-input-from-file input
     (lambda () 
       (for/sum ([line (in-lines)])
-         (define opponent (ref line 0))
-         (define outcome (ref line 2))
-         (+ (shape-points (get-shape opponent outcome))
-            (round-points2 outcome))))))
+         (let-values ([(opponent outcome) (parse-line1 line)])
+           (+ (shape-points (get-shape opponent outcome))
+              (round-points2 outcome)))))))
 
 (printf "Part 1: ~a\n" (part1 "input"))
 (printf "Part 2: ~a\n" (part2 "input"))
