@@ -4,6 +4,9 @@
 (struct dir (children parent))
 (struct file (size))
 
+(define totalspace 70000000)
+(define neededspace 30000000)
+
 (define (cd parent childname)
   (match-let* ([(dir children _) parent])
     (ref children childname)))
@@ -38,20 +41,14 @@
                                          (file (string->number size)))]))
   (get-root filesystem))
 
-(define (sum-of-sizes filesystem [max 100000])
-  (define running-sum 0)
-  (define (get-size x)
-    (define size
-      (for/sum ([child (hash-values (dir-children x))])
-         (match child
-            [(file size) size]
-            [(dir _ _) (get-size child)])))
-    (if (<= size max)
-      (set! running-sum (+ running-sum size))
-      '())
-    size)
-  (get-size filesystem)
-  running-sum)
+(define (get-size x [callback (lambda (size) null)])
+  (define size
+    (for/sum ([child (hash-values (dir-children x))])
+       (match child
+          [(file size) size]
+          [(dir _ _) (get-size child callback)])))
+  (callback size)
+  size)
 
 (define (part2 [input "example.input"])
   (with-input-from-file input
@@ -62,7 +59,13 @@
   (with-input-from-file input
      (lambda ()
         (define filesystem (parse-input))
-        (sum-of-sizes filesystem))))
+        (define running-sum 0)
+        (define (callback size)
+          (if (<= size 100000)
+            (set! running-sum (+ running-sum size))
+            '()))
+        (get-size filesystem callback)
+        running-sum)))
 
 (printf "Part 1: ~a\n" (part1 "input"))
 ;(printf "Part 2: ~a\n" (part2 "input"))
