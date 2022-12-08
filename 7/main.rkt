@@ -1,6 +1,5 @@
 #lang racket
 (require util)
-(require racket/class)
 
 (struct dir (children parent))
 (struct file (size))
@@ -18,12 +17,11 @@
                         (ref children key)))))
     (dir new-children parent)))
 
-(define (parse-ls-output parent)
-  (for/hash ([line (in-lines)]
-             #:break (= #\$ (ref line 0)))
-     (match (string-split line " ")
-        [(list "dir" name) (values name (dir (make-hash) parent))]
-        [(list size filename) (values filename (file size))])))
+(define (get-root x)
+  (define parent (dir-parent x))
+  (if (null? parent)
+    x
+    (get-root parent)))
 
 (define (parse-input)
   (define filesystem (dir (make-hash) null))
@@ -33,11 +31,27 @@
         [(list "$" "cd" "..") (match-let ([(dir _ parent) filesystem])
                                   (set! filesystem parent))]
         [(list "$" "cd" dirname) (set! filesystem (cd filesystem dirname))]
-        [(list "$" "ls") (set! filesystem (ls filesystem (parse-ls-output filesystem)))]
-        [_ (println line)])
-    (println line)
-    (println (dir-children filesystem)))
-  filesystem)
+        [(list "dir" name) (hash-set! (dir-children filesystem) name (dir (make-hash) filesystem))]
+        [(list "$" "ls") empty]
+        [(list size filename) (hash-set! (dir-children filesystem) 
+                                         filename 
+                                         (file (string->number size)))]))
+  (get-root filesystem))
+
+(define (sum-of-sizes filesystem [max 100000])
+  (define running-sum 0)
+  (define (get-size x)
+    (define size
+      (for/sum ([child (hash-values (dir-children x))])
+         (match child
+            [(file size) size]
+            [(dir _ _) (get-size child)])))
+    (if (<= size max)
+      (set! running-sum (+ running-sum size))
+      '())
+    size)
+  (get-size filesystem)
+  running-sum)
 
 (define (part2 [input "example.input"])
   (with-input-from-file input
@@ -47,8 +61,8 @@
 (define (part1 [input "example.input"])
   (with-input-from-file input
      (lambda ()
-        (parse-input))))
+        (define filesystem (parse-input))
+        (sum-of-sizes filesystem))))
 
-(define filesystem (part1))
-;(printf "Part 1: ~a\n" (part1 "input"))
+(printf "Part 1: ~a\n" (part1 "input"))
 ;(printf "Part 2: ~a\n" (part2 "input"))
