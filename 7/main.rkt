@@ -4,9 +4,6 @@
 (struct dir (children parent))
 (struct file (size))
 
-(define totalspace 70000000)
-(define neededspace 30000000)
-
 (define (cd parent childname)
   (match-let* ([(dir children _) parent])
     (ref children childname)))
@@ -50,11 +47,6 @@
   (callback size)
   size)
 
-(define (part2 [input "example.input"])
-  (with-input-from-file input
-     (lambda ()
-        "TODO")))
-
 (define (part1 [input "example.input"])
   (with-input-from-file input
      (lambda ()
@@ -67,5 +59,23 @@
         (get-size filesystem callback)
         running-sum)))
 
+(define totalspace 70000000)
+(define neededspace 30000000)
+
+(define (part2 [input "example.input"])
+  (with-input-from-file input
+     (lambda ()
+        (define filesystem (parse-input))
+        (define space-used (get-size filesystem))
+        (define space-free (- totalspace space-used))
+        (define extra-space-needed (- neededspace space-free))
+        (define possible-deletes (list))
+        (define (callback size)
+          (if (>= size extra-space-needed)
+            (set! possible-deletes (cons size possible-deletes))
+            '()))
+        (get-size filesystem callback)
+        (apply min possible-deletes))))
+
 (printf "Part 1: ~a\n" (part1 "input"))
-;(printf "Part 2: ~a\n" (part2 "input"))
+(printf "Part 2: ~a\n" (part2 "input"))

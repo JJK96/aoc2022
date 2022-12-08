@@ -9,12 +9,12 @@ cat > main.rkt << EOF
 #lang racket
 (require util)
 
-(define (part2 [input "example.input"])
+(define (part1 [input "example.input"])
   (with-input-from-file input
      (lambda ()
         "TODO")))
 
-(define (part1 [input "example.input"])
+(define (part2 [input "example.input"])
   (with-input-from-file input
      (lambda ()
         "TODO")))
